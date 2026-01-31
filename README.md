@@ -1,102 +1,106 @@
-# File Processing Worker Pool Project
+# fileprocessor
 
-## Project Overview
-Build a concurrent file processor that uses a worker pool pattern to process text files. The system should read files from a source directory, process them (word counting), and write results to an output directory.
+**Concurrent file processing patterns in Go - exploring worker pools, graceful shutdown, and backpressure handling**
 
-## Core Requirements
+## Purpose
 
-### Worker Pool Configuration
-- Configurable number of workers (default: 3)
-- Configurable queue buffer size (default: 100)
-- Configurable processing timeout per file (default: 30s)
+Part of my ongoing platform engineering skill maintenance - this repo explores Go concurrency patterns through a practical file processing implementation. Built incrementally with TDD using Ginkgo/Gomega, each feature targets production patterns I've used in distributed systems work.
 
-### File Processing Logic
-- Input: Text files from a source directory
-- Processing: Count total words, lines, and characters in each file
-- Output: JSON results file with statistics per processed file
+**Why file processing?** It's a domain-agnostic way to explore worker pool patterns, context propagation, and resource management - fundamentals that appear in log pipelines, ETL systems, and distributed task processing across platform infrastructure.
 
-### Expected Behavior
-1. **Initialization**: Create worker pool with specified number of workers
-2. **Job Discovery**: Scan source directory for .txt files
-3. **Job Distribution**: Distribute files to available workers via buffered channel
-4. **Processing**: Each worker processes files concurrently and generates statistics
-5. **Result Collection**: Collect results and write to output directory
-6. **Graceful Shutdown**: Complete in-flight work when context is cancelled
+## Current Implementation
 
-### Data Structures
+Building a concurrent file processor with:
+- **Worker pool pattern** with configurable concurrency (N workers)
+- **Buffered job queue** with backpressure handling
+- **Context-based cancellation** and timeout management
+- **Graceful shutdown** ensuring work completion
+- **Result collection** with concurrent-safe aggregation
 
-```go
-type Config struct {
-    SourceDir      string
-    OutputDir      string
-    WorkerCount    int
-    QueueSize      int
-    ProcessTimeout time.Duration
-}
+Processing pipeline: Scan directory → Queue files → Distribute to workers → Process (word/line/char counting) → Collect results → Write JSON output
 
-type FileStats struct {
-    Filename      string    `json:"filename"`
-    WordCount     int       `json:"word_count"`
-    LineCount     int       `json:"line_count"`
-    CharacterCount int      `json:"character_count"`
-    ProcessedAt   time.Time `json:"processed_at"`
-}
-
+## Architecture
+```
 type FileProcessor struct {
     config    Config
-    jobQueue  chan string
-    results   chan FileStats
-    workers   sync.WaitGroup
-    ctx       context.Context
+    jobQueue  chan string        // Buffered channel for work distribution
+    results   chan FileStats     // Result collection channel
+    workers   sync.WaitGroup     // Worker lifecycle management
+    ctx       context.Context    // Cancellation propagation
     cancel    context.CancelFunc
-    running   atomic.Bool
+    running   atomic.Bool        // Thread-safe state
 }
 ```
 
-### Core Methods to Implement
+**Key patterns explored**:
+- Bounded parallelism with semaphore pattern
+- Context deadline propagation through pipeline
+- Coordinated shutdown using WaitGroup
+- Atomic operations for concurrent state
 
-```go
-func NewFileProcessor(config Config) (*FileProcessor, error)
-func (fp *FileProcessor) Start(ctx context.Context) error
-func (fp *FileProcessor) ProcessFiles() error
-func (fp *FileProcessor) IsRunning() bool
-func (fp *FileProcessor) Shutdown() error
-func (fp *FileProcessor) processFile(filename string) (FileStats, error)
-func (fp *FileProcessor) worker(id int)
-func (fp *FileProcessor) collectResults()
+## Testing Approach
+
+Following TDD with progressive complexity:
+1. **Phase 1**: Single worker, single file (happy path)
+2. **Phase 2**: Multiple workers, concurrent processing
+3. **Phase 3**: Error handling, timeout scenarios
+4. **Phase 4**: Graceful shutdown, resource cleanup
+5. **Phase 5**: Edge cases (empty files, permissions, invalid UTF-8)
+
+Using Ginkgo/Gomega for BDD-style tests with explicit concurrency validation.
+
+## Running the Code
+```bash
+# Run tests
+go test -race ./...
+
+# Run with Ginkgo
+ginkgo -v ./...
+
+# Build CLI
+go build -o fileprocessor ./cmd/fileprocessor
+
+# Process files
+./fileprocessor --source ./input --output ./output --workers 5
 ```
 
-### Success Criteria
-- Process multiple files concurrently
-- Handle file I/O errors gracefully
-- Respect context cancellation
-- Generate accurate word/line/character counts
-- Write results in valid JSON format
-- No goroutine leaks or race conditions
+## Implementation Status
 
-### Sample Input/Output
+🚧 **Active Development** - Building incrementally with TDD
 
-**Input file (sample.txt):**
-```
-Hello world!
-This is a test file.
-It has multiple lines.
-```
+**Completed**:
+- Core data structures and interfaces
+- Configuration management
+- Worker pool scaffolding
 
-**Output file (results.json):**
-```json
-{
-  "filename": "sample.txt",
-  "word_count": 10,
-  "line_count": 3,
-  "character_count": 50,
-  "processed_at": "2025-01-15T10:30:00Z"
-}
-```
+**In Progress**:
+- File processing logic
+- Result collection pipeline
+- Test coverage for concurrent scenarios
 
-## Implementation Notes
-- Use `strings.Fields()` for word counting
-- Use `strings.Count()` for line counting
-- Handle edge cases: empty files, permission errors, invalid UTF-8
-- Ensure proper cleanup of goroutines and channels
-- Use atomic operations for thread-safe state management
+**Planned**:
+- Performance benchmarking
+- Memory profiling
+- CLI argument parsing
+
+## Why This Pattern Matters
+
+File processing with worker pools is a microcosm of production distributed systems:
+- **Resource-bounded parallelism** (like Kubernetes pod limits)
+- **Backpressure handling** (like message queue consumers)
+- **Graceful degradation** (like rolling deployments)
+- **Observable failures** (like distributed tracing)
+
+These patterns scale from single-machine file processing to multi-region data pipelines.
+
+## Background
+
+I'm a Senior Platform Engineer with 28 years of experience building distributed systems. This repo represents deliberate practice - keeping Go concurrency fundamentals sharp between infrastructure projects. Not everything needs to be production code; sometimes the process of building is the point.
+
+## Development Approach
+
+Built using AI-assisted pair programming (Claude) to explore modern workflows while maintaining rigorous engineering standards. All code follows TDD with comprehensive test coverage.
+
+## License
+
+MIT
