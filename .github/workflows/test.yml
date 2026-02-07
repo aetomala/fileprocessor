@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  push:
+    branches: [ '**' ]  # Run on all branches
+  pull_request:
+    branches: [ '**' ]  # Run on PRs to any branch
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache: true
+
+    - name: Install Ginkgo
+      run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Run tests with Go (race detector)
+      run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+    - name: Run tests with Ginkgo (race detector)
+      run: ginkgo -v -race --cover --coverprofile=coverage-ginkgo.txt ./cmd/fileprocessor
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.txt,./coverage-ginkgo.txt
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
+
+    - name: Test Summary
+      run: |
+        echo "✅ All tests passed with race detection"
+        echo "📊 Coverage reports generated"
