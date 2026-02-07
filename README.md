@@ -1,5 +1,9 @@
 # fileprocessor
 
+![Tests](https://github.com/aetomala/fileprocessor/workflows/Tests/badge.svg?branch=main)
+![Go Version](https://img.shields.io/badge/go-1.21+-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 **Concurrent file processing patterns in Go - exploring worker pools, graceful shutdown, and backpressure handling**
 
 ## Purpose
