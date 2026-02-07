@@ -218,6 +218,7 @@ func (fp *FileProcessor) ProcessFiles() error {
 				// Job sent successfully
 			case <-fp.ctx.Done():
 				// Context cancelled, stop sending jobs
+				atomic.CompareAndSwapInt32(&fp.state, StateStarted, StateStopped)
 				return
 			}
 		}
@@ -244,6 +245,7 @@ func (fp *FileProcessor) ProcessFiles() error {
 			processedCount++
 
 		case <-fp.ctx.Done():
+			atomic.CompareAndSwapInt32(&fp.state, StateStarted, StateStopped)
 			return fp.ctx.Err()
 		}
 	}
