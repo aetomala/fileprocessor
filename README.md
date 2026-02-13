@@ -177,10 +177,6 @@ These patterns scale from single-machine file processing to multi-region data pi
 
 I'm a Senior Platform Engineer with 28 years of experience building distributed systems. This repo represents deliberate practice - keeping Go concurrency fundamentals sharp between infrastructure projects. Not everything needs to be production code; sometimes the process of building is the point.
 
-## Development Approach
-
-Built using AI-assisted pair programming (Claude) to explore modern workflows while maintaining rigorous engineering standards. All code follows TDD with comprehensive test coverage.
-
 ## License
 
 MIT
